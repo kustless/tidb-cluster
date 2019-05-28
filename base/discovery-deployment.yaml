@@ -1,0 +1,43 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: discovery
+    app.kubernetes.io/instance: tidb-cluster
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: tidb-cluster
+    helm.sh/chart: tidb-cluster-dev
+  name: tidb-cluster-discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: discovery
+      app.kubernetes.io/instance: tidb-cluster
+      app.kubernetes.io/name: tidb-cluster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: discovery
+        app.kubernetes.io/instance: tidb-cluster
+        app.kubernetes.io/name: tidb-cluster
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/tidb-discovery
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: pingcap/tidb-operator:v1.0.0-beta.2
+        imagePullPolicy: IfNotPresent
+        name: discovery
+        resources:
+          limits:
+            cpu: 250m
+            memory: 150Mi
+          requests:
+            cpu: 80m
+            memory: 50Mi
+      serviceAccount: tidb-cluster-discovery

@@ -1,0 +1,168 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: monitor
+    app.kubernetes.io/instance: tidb-cluster
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: tidb-cluster
+    helm.sh/chart: tidb-cluster-dev
+  name: tidb-cluster-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: monitor
+      app.kubernetes.io/instance: tidb-cluster
+      app.kubernetes.io/name: tidb-cluster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: monitor
+        app.kubernetes.io/instance: tidb-cluster
+        app.kubernetes.io/name: tidb-cluster
+    spec:
+      containers:
+      - command:
+        - /bin/prometheus
+        - --web.enable-admin-api
+        - --log.level=info
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/data/prometheus
+        - --storage.tsdb.retention=12d
+        env:
+        - name: TZ
+          value: UTC
+        image: prom/prometheus:v2.2.1
+        imagePullPolicy: IfNotPresent
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: prometheus
+          protocol: TCP
+        resources:
+          limits: {}
+          requests: {}
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: prometheus-config
+          readOnly: true
+        - mountPath: /data
+          name: monitor-data
+      - env:
+        - name: GF_PATHS_DATA
+          value: /data/grafana
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: tidb-cluster-monitor
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: tidb-cluster-monitor
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_NAME
+          value: Main Org.
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: TZ
+          value: UTC
+        image: grafana/grafana:6.0.1
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - /tmp/grafanaPrestart.sh
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        resources:
+          limits: {}
+          requests: {}
+        volumeMounts:
+        - mountPath: /data
+          name: monitor-data
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: datasource
+          readOnly: false
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: dashboards-provisioning
+          readOnly: false
+        - mountPath: /tmp/dashboard-v2
+          name: dashboard-v2
+          readOnly: false
+        - mountPath: /tmp/dashboard-v3
+          name: dashboard-v3
+          readOnly: false
+        - mountPath: /tmp/dashboard-v3/extra
+          name: dashboard-extra-v3
+          readOnly: false
+        - mountPath: /grafana-dashboard-definitions/tidb
+          name: grafana-dashboard
+          readOnly: false
+        - mountPath: /tmp
+          name: grafana-prestart
+          readOnly: false
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |
+          mkdir -p /data/prometheus /data/grafana
+          chmod 777 /data/prometheus /data/grafana
+        image: prom/prometheus:v2.2.1
+        imagePullPolicy: IfNotPresent
+        name: init-data
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /data
+          name: monitor-data
+      serviceAccount: tidb-cluster-monitor
+      volumes:
+      - emptyDir: {}
+        name: monitor-data
+      - configMap:
+          items:
+          - key: prometheus-config
+            path: prometheus.yml
+          - key: alert-rules-config
+            path: alert.rules
+          name: tidb-cluster-monitor
+        name: prometheus-config
+      - configMap:
+          items:
+          - key: datasource-config
+            path: datasource.yaml
+          name: tidb-cluster-monitor
+        name: datasource
+      - configMap:
+          items:
+          - key: dashboard-config
+            path: dashboards.yaml
+          name: tidb-cluster-monitor
+        name: dashboards-provisioning
+      - emptyDir: {}
+        name: grafana-dashboard
+      - configMap:
+          name: tidb-cluster-monitor-dashboard-v2
+        name: dashboard-v2
+      - configMap:
+          name: tidb-cluster-monitor-dashboard-v3
+        name: dashboard-v3
+      - configMap:
+          name: tidb-cluster-monitor-dashboard-extra-v3
+        name: dashboard-extra-v3
+      - configMap:
+          items:
+          - key: grafana-prestart
+            path: grafanaPrestart.sh
+          name: tidb-cluster-monitor
+        name: grafana-prestart

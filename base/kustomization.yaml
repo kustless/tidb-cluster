@@ -1,0 +1,24 @@
+kind: ""
+apiversion: ""
+resources:
+- ConfigMap-tidb-cluster-monitor-dashboard-extra-v3.yaml
+- ConfigMap-tidb-cluster-monitor-dashboard-v3.yaml
+- Role-tidb-cluster-discovery.yaml
+- Role-tidb-cluster-monitor.yaml
+- RoleBinding-tidb-cluster-discovery.yaml
+- RoleBinding-tidb-cluster-monitor.yaml
+- Service-tidb-cluster-grafana.yaml
+- Service-tidb-cluster-prometheus.yaml
+- ServiceAccount-tidb-cluster-discovery.yaml
+- ServiceAccount-tidb-cluster-monitor.yaml
+- discovery-deployment.yaml
+- discovery-service.yaml
+- monitor-configmap.yaml
+- monitor-dashboard-configmap_v2.yaml
+- monitor-deployment.yaml
+- monitor-secret.yaml
+- pd-configmap.yaml
+- tidb-cluster.yaml
+- tidb-configmap.yaml
+- tidb-service.yaml
+- tikv-configmap.yaml

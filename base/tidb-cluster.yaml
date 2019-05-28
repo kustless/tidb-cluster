@@ -1,0 +1,57 @@
+apiVersion: pingcap.com/v1alpha1
+kind: TidbCluster
+metadata:
+  labels:
+    app.kubernetes.io/component: tidb-cluster
+    app.kubernetes.io/instance: tidb-cluster
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: tidb-cluster
+    helm.sh/chart: tidb-cluster-dev
+  name: tidb-cluster
+spec:
+  pd:
+    affinity: {}
+    image: pingcap/pd:v3.0.0-rc.1
+    imagePullPolicy: IfNotPresent
+    limits: {}
+    nodeSelector: {}
+    replicas: 3
+    requests:
+      storage: 1Gi
+    storageClassName: local-storage
+  pvReclaimPolicy: Retain
+  schedulerName: tidb-scheduler
+  services:
+  - name: pd
+    type: ClusterIP
+  tidb:
+    affinity: {}
+    binlogEnabled: false
+    image: pingcap/tidb:v3.0.0-rc.1
+    imagePullPolicy: IfNotPresent
+    limits: {}
+    maxFailoverCount: 3
+    nodeSelector: {}
+    replicas: 2
+    requests: {}
+    separateSlowLog: false
+    slowLogTailer:
+      image: busybox:1.26.2
+      imagePullPolicy: IfNotPresent
+      limits:
+        cpu: 100m
+        memory: 50Mi
+      requests:
+        cpu: 20m
+        memory: 5Mi
+  tikv:
+    affinity: {}
+    image: pingcap/tikv:v3.0.0-rc.1
+    imagePullPolicy: IfNotPresent
+    limits: {}
+    nodeSelector: {}
+    replicas: 3
+    requests:
+      storage: 10Gi
+    storageClassName: local-storage
+  timezone: UTC

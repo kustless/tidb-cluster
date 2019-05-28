@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: discovery
+    app.kubernetes.io/instance: tidb-cluster
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: tidb-cluster
+    helm.sh/chart: tidb-cluster-dev
+  name: tidb-cluster-discovery
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tidb-cluster-discovery
+subjects:
+- kind: ServiceAccount
+  name: tidb-cluster-discovery
